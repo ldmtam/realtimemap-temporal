@@ -41,6 +41,22 @@ We'll have 3 types of Workflow in the application
 - Organization: receive signal from **vehicle** Workflow and send signal to corresponding **geofence** Workflow
 - Geofence: receive signal from **organization** Workflow, maintain which vehicles are currently in this geofence and response to **get geofence request** from **server**
 
+## cURL
+List all **organizations** that have geofences setup
+```
+curl --location 'localhost:12345/api/v1/organization'
+```
+
+List all **geofences** and **vehicles** currently inside those geofences of an **organization**
+```
+curl --location 'localhost:12345/api/v1/organization/0030'
+```
+
+List all position changes history of an **vehicle**
+```
+curl --location 'localhost:12345/api/v1/trail/0012.02212'
+```
+
 ## How does it work?
 Please refer to the [.NET version using Proto.Actor](https://github.com/asynkron/realtimemap-dotnet) README for a detailed description of the architecture.
 
