@@ -62,4 +62,4 @@ Please refer to the [.NET version using Proto.Actor](https://github.com/asynkron
 
 ## TODO
 -  [ ] Support Geofencing notifications (vehicle entering and exiting the area).
--  [ ] Support Continue-As-New for Workflows that generate lots of events (geofence, vehicle).
+-  [x] Support Continue-As-New for Workflows when Temporal history events length and size limit reached.
