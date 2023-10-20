@@ -1,7 +1,9 @@
 package server
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"realtimemap-temporal/data"
 	"realtimemap-temporal/shared"
@@ -9,10 +11,12 @@ import (
 	"sort"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"github.com/redis/go-redis/v9"
 	"go.temporal.io/sdk/client"
 )
 
-func serveAPI(router *gin.Engine, temporalClient client.Client) {
+func serveAPI(router *gin.Engine, redisCli *redis.Client, temporalClient client.Client) {
 	router.GET("/api/v1/organization", func(c *gin.Context) {
 		result := make([]*shared.Organization, 0, len(data.AllOrganizations))
 
@@ -104,4 +108,47 @@ func serveAPI(router *gin.Engine, temporalClient client.Client) {
 
 		c.JSON(http.StatusOK, historyResp.Positions)
 	})
+
+	router.GET("/ws", func(c *gin.Context) {
+		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, map[string]any{"error": err})
+			return
+		}
+
+		go writePump(conn, redisCli)
+		go readPump(conn)
+	})
+}
+
+func writePump(conn *websocket.Conn, redisCli *redis.Client) {
+	pubsub := redisCli.Subscribe(context.Background(), shared.GeofenceNotificationChannel)
+	defer func() {
+		pubsub.Unsubscribe(context.Background(), shared.GeofenceNotificationChannel)
+		pubsub.Close()
+	}()
+
+	messageCh := pubsub.Channel()
+
+	for {
+		message := <-messageCh
+		if err := conn.WriteMessage(1, []byte(message.Payload)); err != nil {
+			return
+		}
+	}
+}
+
+func readPump(conn *websocket.Conn) {
+	defer conn.Close()
+
+	for {
+		_, _, err := conn.ReadMessage()
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("error: %v", err)
+			}
+			break
+		}
+
+	}
 }

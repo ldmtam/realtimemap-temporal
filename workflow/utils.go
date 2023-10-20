@@ -13,3 +13,7 @@ func GetOrganizationWorkflowID(orgID string) string {
 func GetGeofenceWorkflowID(name string) string {
 	return fmt.Sprintf("geofence-%v", name)
 }
+
+func GetNotificationWorkflowID() string {
+	return "notification"
+}

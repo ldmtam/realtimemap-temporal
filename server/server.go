@@ -7,17 +7,25 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"github.com/redis/go-redis/v9"
 	"go.temporal.io/sdk/client"
 )
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
 
 type Server struct {
 	ctx context.Context
 	srv *http.Server
 }
 
-func NewHttpServer(ctx context.Context, temporalClient client.Client) *Server {
+func NewHttpServer(ctx context.Context, redisCli *redis.Client, temporalClient client.Client) *Server {
 	router := gin.Default()
-	serveAPI(router, temporalClient)
+
+	serveAPI(router, redisCli, temporalClient)
 
 	srv := &http.Server{
 		Addr:    ":12345",

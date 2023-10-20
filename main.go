@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"realtimemap-temporal/data"
 	"realtimemap-temporal/ingress"
 	"realtimemap-temporal/server"
 	"realtimemap-temporal/shared"
@@ -13,6 +14,8 @@ import (
 
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/log"
+
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -32,7 +35,12 @@ func main() {
 	}
 	defer temporalClient.Close()
 
-	srv := server.NewHttpServer(ctx, temporalClient)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: ":6379",
+	})
+	defer redisClient.Close()
+
+	srv := server.NewHttpServer(ctx, redisClient, temporalClient)
 	srvDone := srv.ListenAndServe()
 
 	err = workflow.InitOrganization(ctx, temporalClient)
@@ -41,6 +49,11 @@ func main() {
 	}
 
 	err = workflow.InitGeofence(ctx, temporalClient)
+	if err != nil {
+		panic(err)
+	}
+
+	err = workflow.InitNotification(ctx, temporalClient)
 	if err != nil {
 		panic(err)
 	}
@@ -86,9 +99,15 @@ func mapToPosition(e *ingress.Event) *shared.Position {
 		return nil
 	}
 
+	orgName := ""
+	if org, ok := data.AllOrganizations[e.OperatorId]; ok {
+		orgName = org.Name
+	}
+
 	return &shared.Position{
 		VehicleId: e.VehicleId,
 		OrgId:     e.OperatorId,
+		OrgName:   orgName,
 		Latitude:  *payload.Latitude,
 		Longitude: *payload.Longitude,
 		Heading:   *payload.Heading,

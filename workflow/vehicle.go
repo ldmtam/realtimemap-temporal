@@ -2,7 +2,6 @@ package workflow
 
 import (
 	"context"
-	"fmt"
 	"realtimemap-temporal/shared"
 
 	"go.temporal.io/sdk/client"
@@ -81,7 +80,7 @@ func Vehicle(ctx workflow.Context, input *VehicleInput) (*VehicleOutput, error) 
 }
 
 func InitVehicle(ctx context.Context, temporalClient client.Client, position *shared.Position) error {
-	workflowID := fmt.Sprintf("vehicle-%v", position.VehicleId)
+	workflowID := GetVehicleWorkflowID(position.VehicleId)
 	startWorkflowOpts := client.StartWorkflowOptions{
 		TaskQueue: shared.RealtimeMapTaskQueue,
 	}

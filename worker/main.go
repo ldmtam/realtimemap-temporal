@@ -8,6 +8,7 @@ import (
 	"realtimemap-temporal/shared"
 	"realtimemap-temporal/workflow"
 
+	"github.com/redis/go-redis/v9"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/worker"
@@ -27,11 +28,22 @@ func main() {
 	}
 	defer temporalClient.Close()
 
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: ":6379",
+	})
+	defer redisClient.Close()
+
 	w := worker.New(temporalClient, shared.RealtimeMapTaskQueue, worker.Options{})
 
 	w.RegisterWorkflow(workflow.Vehicle)
 	w.RegisterWorkflow(workflow.Organization)
 	w.RegisterWorkflow(workflow.Geofence)
+	w.RegisterWorkflow(workflow.Notification)
+
+	notifyActivities := &workflow.NotifyActivities{
+		RedisCli: redisClient,
+	}
+	w.RegisterActivity(notifyActivities)
 
 	err = w.Run(worker.InterruptCh())
 	if err != nil {

@@ -61,9 +61,36 @@ func Geofence(ctx workflow.Context, input *GeofenceInput) (*GeofenceOutput, erro
 		if geofence.IncludesPosition(position.Latitude, position.Longitude) {
 			if !vehicleIsInZone {
 				vehiclesInZone[position.VehicleId] = struct{}{}
+				workflow.SignalExternalWorkflow(
+					ctx,
+					GetNotificationWorkflowID(),
+					"",
+					shared.NotificationSignal,
+					&shared.Notification{
+						VehicleId: position.VehicleId,
+						OrgId:     position.OrgId,
+						OrgName:   position.OrgName,
+						ZoneName:  geofence.Name,
+						Event:     shared.GeofenceEvent_ENTER,
+					},
+				)
 			}
 		} else {
 			delete(vehiclesInZone, position.VehicleId)
+			vehiclesInZone[position.VehicleId] = struct{}{}
+			workflow.SignalExternalWorkflow(
+				ctx,
+				GetNotificationWorkflowID(),
+				"",
+				shared.NotificationSignal,
+				&shared.Notification{
+					VehicleId: position.VehicleId,
+					OrgId:     position.OrgId,
+					OrgName:   position.OrgName,
+					ZoneName:  geofence.Name,
+					Event:     shared.GeofenceEvent_EXIT,
+				},
+			)
 		}
 	})
 

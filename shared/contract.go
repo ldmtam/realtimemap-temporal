@@ -2,24 +2,10 @@ package shared
 
 import geo "github.com/kellydunn/golang-geo"
 
-const (
-	VehicleSignal      = "VehicleSignal"
-	OrganizationSignal = "OrganizationSignal"
-	GeofenceSignal     = "GeofenceSignal"
-)
-
-const (
-	RealtimeMapTaskQueue = "realtimemap_task_queue"
-)
-
-const (
-	VehiclePositionHistoryQuery = "get_position_history"
-	GeofencesQuery              = "get_geofences"
-)
-
 type Position struct {
 	VehicleId string  `json:"vehicleId"`
 	OrgId     string  `json:"orgId"`
+	OrgName   string  `json:"orgName"`
 	Timestamp int64   `json:"timestamp"`
 	Longitude float64 `json:"longitude"`
 	Latitude  float64 `json:"latitude"`
